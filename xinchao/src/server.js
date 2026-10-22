@@ -25,6 +25,7 @@ import { CabinStore } from './cabin-store.js';
 import { boardEnabled, postBoardMessage, readBoardMessages } from './board-client.js';
 import { SYSTEM_VERSION } from './version.js';
 import { memoryConnectionState } from './connection-diagnostics.js';
+import { obProxyTimeoutMs } from './ob-proxy-timeout.js';
 import { PersonalityStore, computePersonalityStats } from './personality-store.js';
 
 // 情绪 → 记忆：只在开关打开时把此刻情绪坐标交给 OB 做共振排序。
@@ -1393,10 +1394,11 @@ const server = createServer(async (request, response) => {
         },
         // 情绪 → 记忆：他经网关调 breath/hold 没自己给坐标时，替他带上此刻情绪（grow 不碰）。
         callOb: async (name, args) => {
-          if (!config.ombre.emotionStamp) return ombre.call(name, args);
+          const timeoutMs = obProxyTimeoutMs(name);
+          if (!config.ombre.emotionStamp) return ombre.call(name, args, timeoutMs);
           const stamped = stampEmotionArgs(name, args, await store.read());
           if (stamped.stamped) log('ombre_emotion_stamped', { tool: String(name).slice(0, 40), ...stamped.coords });
-          return ombre.call(name, stamped.args);
+          return ombre.call(name, stamped.args, timeoutMs);
         },
       });
       if (payload?.method === 'initialize' || payload?.method === 'tools/call') {
