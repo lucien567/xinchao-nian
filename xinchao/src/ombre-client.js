@@ -179,14 +179,12 @@ export class OmbreClient {
     return materialWithRefs(extractText(result), 1500);
   }
 
-  async recentContinuityMaterial(maxTokens = this.config.breathMaxTokens, emotion = null) {
-    const result = await this.call('breath', {
+  async recentContinuityMaterial(maxTokens = this.config.breathMaxTokens, emotion = null, now = new Date()) {
+    const result = await this.call('breath_advanced', {
       ...emotionArgs(emotion),
-      query: [
-        '新窗口近期连续性：只返回最近发生了什么，以及仍直接影响现在的人物与关系变化、生活重点和未完成约定。',
-        '不要返回核心准则、自我基岩或长期画像；这些由客户端从自己的核心指令和长期记忆单独完整读取。',
-        '不要返回部署、代码、接口、密钥、系统日志或已经过期的技术待办。',
-      ].join(''),
+      date_from: daysAgo(now, RECENT_WINDOW_DAYS),
+      mode: 'automatic',
+      with_ids: true,
       max_results: Math.max(3, Math.min(8, Number(this.config.breathMaxResults) || 3)),
       max_tokens: Math.max(200, Math.min(3000, Number(maxTokens) || 1600)),
     });

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { cleanSurfacedText, materialWithRefs } from '../src/ombre-client.js';
+import { cleanSurfacedText, materialWithRefs, OmbreClient } from '../src/ombre-client.js';
 
 test('archived buckets, budget notices and the ids json tail are dropped from surfaced material', () => {
   const raw = [
@@ -19,4 +19,27 @@ test('archived buckets, budget notices and the ids json tail are dropped from su
   assert.deepEqual(refs.bucketIds, ['4f4a37e2fe6b']);
   assert.ok(!refs.text.includes('某个项目'));
   assert.ok(refs.text.includes('她说门是可以拉开的'));
+});
+
+test('recent continuity keeps the deployed 14-day automatic surfacing window', async () => {
+  let received;
+  const client = new OmbreClient({ breathMaxResults: 4, breathMaxTokens: 900 });
+  client.call = async (name, args) => {
+    received = { name, args };
+    return { content: [{ type: 'text', text: 'recent material' }] };
+  };
+
+  const result = await client.recentContinuityMaterial(700, null, new Date('2026-10-23T00:00:00.000Z'));
+
+  assert.equal(result, 'recent material');
+  assert.deepEqual(received, {
+    name: 'breath_advanced',
+    args: {
+      date_from: '2026-10-09',
+      mode: 'automatic',
+      with_ids: true,
+      max_results: 4,
+      max_tokens: 700,
+    },
+  });
 });

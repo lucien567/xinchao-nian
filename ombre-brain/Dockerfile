@@ -39,7 +39,7 @@ COPY frontend/ ./frontend/
 COPY VERSION ./VERSION
 COPY config.default.yaml ./config.default.yaml
 COPY entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+RUN sed -i 's/\r$//' ./entrypoint.sh && chmod +x ./entrypoint.sh
 
 # 面向用户/模型的说明文档（本版本实际存在的几篇）
 COPY docs/CLAUDE_PROMPT.md docs/INTERNALS.md docs/MULTI_OWNER.md docs/OPERATIONS.md ./docs/
