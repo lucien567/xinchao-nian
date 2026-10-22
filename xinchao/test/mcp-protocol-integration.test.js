@@ -18,6 +18,9 @@ test('tools/list keeps Xinchao, board and curated OB tools together', async () =
     boardEnabled: true,
     listObTools: async () => [
       { name: 'breath', description: 'memory', inputSchema: { type: 'object' } },
+      { name: 'breath_search', description: 'search', inputSchema: { type: 'object' } },
+      { name: 'breath_reliable', description: 'reliable', inputSchema: { type: 'object' } },
+      { name: 'diary_write', description: 'diary', inputSchema: { type: 'object' } },
       { name: 'purge', description: 'must stay hidden', inputSchema: { type: 'object' } },
     ],
   });
@@ -32,7 +35,68 @@ test('tools/list keeps Xinchao, board and curated OB tools together', async () =
   assert.ok(names.includes('board_post'));
   assert.ok(names.includes('board_read'));
   assert.ok(names.includes('breath'));
+  assert.ok(names.includes('breath_search'));
+  assert.ok(names.includes('breath_reliable'));
+  assert.ok(names.includes('diary_write'));
   assert.equal(names.includes('purge'), false);
+});
+
+test('diary_write forwards evidence and structured receipts unchanged', async () => {
+  const args = { source_content: 'synthetic evidence', scope: 'main', policy_version: 'policy', items: [] };
+  const receipt = { content: [{ type: 'text', text: '{"schema":1,"success":true,"items":[]}' }] };
+  const result = await handleMcpMessage(request('tools/call', { name: 'diary_write', arguments: args }), {
+    callOb: async (name, received) => {
+      assert.equal(name, 'diary_write');
+      assert.deepEqual(received, args);
+      return { result: receipt };
+    },
+  });
+  assert.deepEqual(result.body.result, receipt);
+});
+
+test('breath_search is forwarded to OB without changing its arguments', async () => {
+  let received;
+  const result = await handleMcpMessage(request('tools/call', {
+    name: 'breath_search',
+    arguments: { query: '共同决定', max_results: 5, quotes: true, with_ids: true },
+  }), {
+    callOb: async (name, args) => {
+      received = { name, args };
+      return { result: { content: [{ type: 'text', text: 'found' }] } };
+    },
+  });
+  assert.equal(result.body.result.isError, undefined);
+  assert.deepEqual(received, {
+    name: 'breath_search',
+    args: { query: '共同决定', max_results: 5, quotes: true, with_ids: true },
+  });
+});
+
+test('breath_reliable forwards the machine contract unchanged', async () => {
+  const args = { query: '共同决定', max_results: 3 };
+  const contract = { schema: 1, tool: 'breath_reliable', mode: 'automatic', results: [] };
+  const receipt = { content: [{ type: 'text', text: JSON.stringify(contract) }] };
+  const result = await handleMcpMessage(request('tools/call', { name: 'breath_reliable', arguments: args }), {
+    callOb: async (name, received) => {
+      assert.equal(name, 'breath_reliable');
+      assert.deepEqual(received, args);
+      return { result: receipt };
+    },
+  });
+  assert.deepEqual(result.body.result, receipt);
+});
+
+test('I writes stay blocked at the gateway until directly approved', async () => {
+  let called = false;
+  const result = await handleMcpMessage(request('tools/call', {
+    name: 'I',
+    arguments: { content: 'synthetic candidate' },
+  }), {
+    callOb: async () => { called = true; },
+  });
+  assert.equal(called, false);
+  assert.equal(result.body.result.isError, true);
+  assert.match(result.body.result.content[0].text, /direct OB approval/);
 });
 
 test('AI can submit one complete monthly personality reflection through MCP', async () => {

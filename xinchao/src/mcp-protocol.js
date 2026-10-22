@@ -26,12 +26,15 @@ const INTERACTION_TYPES = new Set([
 // hold 保留（2026-08-09 复议：hold 有了 meaning 字段能补上下文，与 grow 不冲突——
 // 日常/日记整理走 grow，重要瞬间可用 hold 但必须写 meaning）。
 // 走代理转发到 OB；schema 在 tools/list 时动态从 OB 拉，永不漂移。
-export const OB_PROXY_TOOLS = ['breath', 'hold', 'grow', 'trace', 'forget', 'dream', 'anchor', 'release', 'I', 'pulse'];
+export const OB_PROXY_TOOLS = ['breath', 'breath_search', 'breath_reliable', 'diary_write', 'hold', 'grow', 'trace', 'forget', 'dream', 'anchor', 'release', 'I', 'pulse'];
 const OB_PROXY_SET = new Set(OB_PROXY_TOOLS);
 
 // 对外用中文标题 + 中文说明（内部名保持不变，用于协议路由）。让机看到的是"浮现记忆"而不是"breath"。
 const OB_TOOL_LABELS = {
+  diary_write: { title: '保存已校验日记', description: '小家 Memory Writer 专用：保存已校验的原始证据和日记；仅完全一致的证据与内容防重，不按语义相似合并。返回结构化写入回执。' },
   breath:  { title: '浮现记忆', description: '让当前最相关的长期记忆自然浮现，并带回近期梦境摘要与余韵。用于新窗口开始、上下文断层、或确需重新寻找相关记忆时；不要每条消息调用。' },
+  breath_search: { title: '检索记忆', description: '只读检索相关长期记忆；可返回稳定 bucket ID，用于写入前保守查重。相似不等于同一事件，不可仅凭相似结果覆盖或合并旧记忆。' },
+  breath_reliable: { title: '可靠检索记忆', description: '仅供自动召回：返回版本化机器合同，逐桶标明证据准入；语义相关只证明检索相关性，不证明历史事实。' },
   hold:    { title: '沉淀一条', description: '当场存一条重要的短记忆（重要决定、关系变化、有长期意义的话或共同经历）。必须写 meaning 补上下文；不适合普通寒暄、临时信息或每一句对话。' },
   grow:    { title: '整理导入', description: '把一段整理好的内容（如当天日记）按有意义的小节导入，系统自动拆成多条并各自尝试合并。日常/日记整理走这条。' },
   trace:   { title: '追溯修改', description: '修改一条已存在记忆的字段（重要度、标签、domain、标记已放下/已消化、软删除等）。不要猜 id、不要自行改写正文。' },
@@ -745,6 +748,9 @@ async function callToolInner(name, args, handlers) {
     return toolText(text, result);
   }
   if (OB_PROXY_SET.has(name)) {
+    if (name === 'I' && ['content', 'promote', 'supersedes'].some((field) => String(args?.[field] ?? '').trim())) {
+      throw new Error('I writes require Sienna-reviewed direct OB approval');
+    }
     if (!handlers.callOb) throw new Error('OB 记忆后端未接入');
     const raw = await handlers.callOb(name, args);
     const payload = raw?.result ?? raw;

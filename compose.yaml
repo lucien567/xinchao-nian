@@ -15,6 +15,8 @@ services:
     build:
       context: ./ombre-brain
       args:
+        # 本机样板间不需要公网 Tunnel，避免构建时额外下载 cloudflared。
+        INSTALL_CLOUDFLARED: "0"
         # 国内 VPS 直连官方 PyPI 常卡死；在 .env 里填 PIP_INDEX_URL 即可走镜像（Dockerfile 已支持）
         PIP_INDEX_URL: ${PIP_INDEX_URL:-}
         PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-}
@@ -80,6 +82,7 @@ services:
       - ombre-buckets:/ombre-buckets:ro
       # 4.0：把配置目录挂进来，改 xinchao/configs/ 里的 interaction-rules.json、attention-rules.json 一分钟内生效，不用重建
       - ./xinchao/configs:/app/configs:ro
+      - ./xinchao/src/mcp-protocol.js:/app/src/mcp-protocol.js:ro
     read_only: true
     tmpfs:
       - /tmp:size=16m,mode=1777
