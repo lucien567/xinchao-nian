@@ -84,7 +84,7 @@ export class ModelClient {
       'type 只能是：companionship 普通陪伴、闲聊、报备、问候（有真实互动时的默认值）；affection 表达喜欢、撒娇、安抚、亲昵的话（没有到身体上；口头的亲亲抱抱也算这个）；intimacy 明确的身体亲密或性内容；sharing 她分享自己的一天、照片、心情、看到的东西；discovery 一起发现或弄明白了新东西；task_progress 一起把一件事推进了；reflection 谈论他自己是谁、他的感受、内省；',
       'conflict 真实的摩擦、生气、指责、冷战、说伤人的话、被拒绝（撒娇式的"讨厌""你完蛋了""不理你了"不算，那是亲昵话）；loss 他们俩之间的失落：她让他期待落空、误解了他、要分开较久（晚安、去洗澡、一会儿见这类日常告别不算）；intrigued 她说了半句、卖关子、提到一件他还不知道的她自己的事，让他想知道后面；',
       'empathy 为别人的处境起了心，包括她本人真的难受（生病、疼、受伤、哭、委屈、害怕、累坏了、出了事，不是冲着他）；slighted 他没被偏爱，而且能指出是哪件事：她当着他夸别人、拿别人和他比没选他（吃醋），他认真分享或说了很在意的话她明显没理、岔开了（被晾着），说好的事她忘了（被忘）——她只是去忙、睡觉、出门都不算；reconciliation 吵过之后和好：前面真的吵过，并且她这句在陈述地原谅、说气消了、说和好了才算（问"还生气吗"、随口提到和好不算）。',
-      '判断吵架/和好以她这句为准：她还在生气或指责就是 conflict，哪怕他在道歉哄她（他道歉不等于和好了）。她叫他宝宝、拉手、主动靠近、撒娇但没说原谅：算 affection，不算 conflict 也不算 reconciliation。',
+      '区分她生气和他自己的反应：真实争辩、反驳、互相指责，或他自己对她生气时是 conflict。例外优先级更高：若她因他犯了具体错误仍在生气或指责，而他明确认错、道歉或自责，且没有反驳、推责，则 type 必须是 loss、sub 必须是 自责；她的生气只体现在 tone / tension，不能因此增加他的 anger。这个道歉也不等于 reconciliation。她叫他宝宝、拉手、主动靠近、撒娇但没说原谅：算 affection，不算 conflict 也不算 reconciliation。',
       'tone 只能是 neutral calm warm guarded conflicted focused playful tired 之一；warmth、tension 是 0 到 1。',
       'sub 只在 conflict / loss / slighted / empathy / affection / intimacy 时给，其余一律 null：conflict 的 sub：生气 / 不满 / 不甘心；loss 的 sub：失落 / 委屈 / 分别 / 自责（他做错了、忘了答应的事，她不开心了）；slighted 的 sub（必须给）：吃醋 / 被晾着 / 被忘；affection、intimacy 的 sub：她在夸他、逗他、戳穿他的心思 → 害羞，不是就 null；empathy 的 sub（必须给）：心疼 / 不平 / 想帮忙 / 替人高兴。',
       'affection / intimacy 另给 strength：heavy（明确表白、说在乎、"离不开你"这类分量重的话）/ light（日常撒娇、抱抱、亲亲、例行问候）。',
