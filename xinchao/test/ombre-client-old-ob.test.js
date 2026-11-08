@@ -52,6 +52,19 @@ test('其它 isError 照样当失败抛出，不当原文', async () => {
   await assert.rejects(() => client.recentMaterialWithRefs([], null), (e) => e instanceof OmbreToolError && !e.unknownTool);
 });
 
+test('grow 等待慢写入完成，其它 OB 工具仍使用短超时', async () => {
+  const client = new OmbreClient({ url: 'http://ob.test/mcp' });
+  client.stateless = true;
+  const calls = [];
+  client.post = async (_payload, _expectBody, timeoutMs) => {
+    calls.push(timeoutMs);
+    return { result: { content: [{ type: 'text', text: 'ok' }] } };
+  };
+  await client.call('grow', { content: 'slow' });
+  await client.call('breath', {});
+  assert.deepEqual(calls, [80000, 15000]);
+});
+
 test('有 breath_advanced 的 OB 照旧走浮现道', async () => {
   const { client, calls } = fakeOb({ hasAdvanced: true });
   await client.daytimeMaterialWithRefs([], null, new Date());

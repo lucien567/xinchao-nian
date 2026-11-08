@@ -48,6 +48,11 @@ import numpy as np
 from openai import AsyncOpenAI
 
 try:
+    from embedding_codec import decode_stored_embedding
+except ImportError:  # pragma: no cover
+    from .embedding_codec import decode_stored_embedding  # type: ignore
+
+try:
     from utils import parse_bool, positive_float
 except ImportError:  # pragma: no cover
     from .utils import parse_bool, positive_float  # type: ignore
@@ -719,8 +724,8 @@ class EmbeddingEngine:
             conn.close()
         if row:
             try:
-                return json.loads(row[0])
-            except json.JSONDecodeError:
+                return decode_stored_embedding(row[0])
+            except (json.JSONDecodeError, ValueError, TypeError):
                 return None
         return None
 
@@ -765,14 +770,9 @@ class EmbeddingEngine:
                 if not raw_embedding:
                     continue
                 try:
-                    stored_embedding = json.loads(raw_embedding)
-                    if not isinstance(stored_embedding, list):
-                        raise TypeError(
-                            f"embedding is {type(stored_embedding).__name__}, not list"
-                        )
+                    stored_embedding = decode_stored_embedding(raw_embedding)
                     if not stored_embedding:
                         continue
-                    stored_embedding = [float(value) for value in stored_embedding]
                 except (json.JSONDecodeError, ValueError, TypeError) as _emb_exc:
                     logger.warning(
                         f"[embedding] Skipping malformed {label} for {bucket_id!r}: "
