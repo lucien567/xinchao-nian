@@ -77,7 +77,7 @@ export class OmbreClient {
     return fallback ? this.read('breath', fallback) : null;
   }
 
-  async call(name, args = {}, timeoutMs = 15000) {
+  async call(name, args = {}, timeoutMs = name === 'grow' ? 80000 : 15000) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       await this.initialize();
       try {
